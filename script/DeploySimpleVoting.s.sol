@@ -7,6 +7,10 @@ import {HelperConfig} from "./HelperConfig.s.sol";
 
 contract DeploySimpleVoting is Script {
     function run() external returns (SimpleVoting) {
+        return deploySimpleVoting();
+    }
+
+    function deploySimpleVoting() public returns (SimpleVoting) {
         HelperConfig helperConfig = new HelperConfig();
 
         address owner = helperConfig.activeNetworkConfig();
