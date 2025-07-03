@@ -51,14 +51,20 @@ contract SimpleVoting is Ownable {
     }
 
     function vote(uint256 pollIndex, Vote theVote) external {
+        if (pollIndex >= s_polls.length) {
+            revert PollDoesNotExist();
+        }
+
+        Poll storage poll = s_polls[pollIndex];
+
         if (s_hasVoted[pollIndex][msg.sender]) {
             revert AlreadyVoted();
         }
-        Poll storage poll = s_polls[pollIndex];
 
         if (block.timestamp > poll.votingTime) {
             revert VotingEnded();
         }
+
 
         s_hasVoted[pollIndex][msg.sender] = true;
 

@@ -6,6 +6,7 @@ import {Script} from "forge-std/Script.sol";
 import {SimpleVoting} from "../src/SimpleVoting.sol";
 // import {HelperConfig} from "../script/HelperConfig.s.sol";
 import {DeploySimpleVoting} from "../script/DeploySimpleVoting.s.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract SimpleVotingTest is Test, DeploySimpleVoting {
     SimpleVoting simpleVoting;
@@ -24,7 +25,7 @@ contract SimpleVotingTest is Test, DeploySimpleVoting {
                                CREATE POLL
     //////////////////////////////////////////////////////////////*/
 
-    function test__PollWithThisNameAlreadyExists() external {
+    function test__RevertIfPollWithThisNameAlreadyExists() external {
         //  Arrange
         string memory question = "Is this contract good?";
         uint256 duration = 1 hours;
@@ -40,13 +41,20 @@ contract SimpleVotingTest is Test, DeploySimpleVoting {
         simpleVoting.createPoll(question, duration);
     }
 
-    function test__OnlyOwnerCanCreatePoll() external {
+    function test__RevertIfNotOwnerCreatesPoll() external {
         string memory question = "Is this contract good?";
         uint256 duration = 1 hours;
 
         vm.prank(USER);
+        // vm.expectRevert(
+        //     abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", USER)
+        // );
+
         vm.expectRevert(
-            abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", USER)
+            abi.encodeWithSelector(
+                Ownable.OwnableUnauthorizedAccount.selector,
+                USER
+            )
         );
         simpleVoting.createPoll(question, duration);
     }
@@ -85,4 +93,15 @@ contract SimpleVotingTest is Test, DeploySimpleVoting {
         assertEq(noVotes, 0);
         assertGt(votingTime, block.timestamp);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                                Vote
+    //////////////////////////////////////////////////////////////*/
+    function test__RevertIfPollDoesNotExist() external {}
+
+    function test__RevertIfUserAlreadyVoted() external {}
+
+    function test__RevertIfVotingEnded() external {}
+
+    function test__VotedSuccessfully() external {}
 }
