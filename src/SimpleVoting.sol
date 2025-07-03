@@ -9,6 +9,7 @@ contract SimpleVoting is Ownable {
     error VotingEnded();
     error NameAlreadyExists();
     error VotingNotEndedYet();
+    error PollDoesNotExist();
 
     enum Vote {
         YES,
@@ -22,47 +23,46 @@ contract SimpleVoting is Ownable {
         uint256 votingTime;
     }
 
-    address private immutable i_owner;
-    Poll[] private s_poles;
-    uint256 private s_pollIndex;
+    Poll[] private s_polls;
     mapping(uint256 => mapping(address => bool)) s_hasVoted;
 
-    constructor() Ownable(i_owner) {
-        i_owner = msg.sender;
-    }
+    constructor() Ownable(msg.sender) {}
 
     function createPoll(
         string calldata _question,
         uint256 _durationInSeconds
     ) external onlyOwner {
-        Poll memory newPoll = s_poles[s_pollIndex];
-
-        for (uint256 i = 0; i < s_pollIndex; i++) {
+        for (uint256 i = 0; i < s_polls.length; i++) {
             if (
-                keccak256(bytes(s_poles[i].question)) ==
+                keccak256(bytes(s_polls[i].question)) ==
                 keccak256(bytes(_question))
             ) {
                 revert NameAlreadyExists();
             }
         }
 
-        newPoll.question = _question;
-        newPoll.votingTime = block.timestamp + _durationInSeconds;
-        s_pollIndex++;
+        Poll memory newPoll = Poll({
+            question: _question,
+            yesVotes: 0,
+            noVotes: 0,
+            votingTime: block.timestamp + _durationInSeconds
+        });
+        s_polls.push(newPoll);
     }
 
-    function vote(uint256 pollIndex, Vote vote) external {
+    function vote(uint256 pollIndex, Vote theVote) external {
         if (s_hasVoted[pollIndex][msg.sender]) {
             revert AlreadyVoted();
         }
-        Poll memory poll = s_poles[pollIndex];
+        Poll storage poll = s_polls[pollIndex];
+
         if (block.timestamp > poll.votingTime) {
             revert VotingEnded();
         }
 
         s_hasVoted[pollIndex][msg.sender] = true;
 
-        if (vote == Vote.YES) {
+        if (theVote == Vote.YES) {
             poll.yesVotes += 1;
         } else {
             poll.noVotes += 1;
@@ -73,7 +73,7 @@ contract SimpleVoting is Ownable {
     function pollResults(
         uint256 pollIndex
     ) external view returns (string memory) {
-        Poll memory poll = s_poles[pollIndex];
+        Poll memory poll = s_polls[pollIndex];
 
         if (block.timestamp < poll.votingTime) {
             revert VotingNotEndedYet();
@@ -100,15 +100,14 @@ contract SimpleVoting is Ownable {
             uint256 votingTime
         )
     {
-        Poll memory poll = s_poles[pollIndex];
+        Poll memory poll = s_polls[pollIndex];
         return (poll.question, poll.yesVotes, poll.noVotes, poll.votingTime);
     }
 
-    function getPoles() external view returns (Poll[] memory) {
-        Poll[] memory polls = new Poll[](s_pollIndex);
-        for (uint256 i = 0; i < s_pollIndex; i++) {
-            polls[i] = s_poles[i];
+    function getPollByIndex(uint256 index) external view returns (Poll memory) {
+        if (index >= s_polls.length) {
+            revert PollDoesNotExist();
         }
-        return polls;
+        return s_polls[index];
     }
 }
