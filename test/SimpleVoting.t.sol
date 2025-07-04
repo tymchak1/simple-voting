@@ -16,11 +16,7 @@ contract SimpleVotingTest is Test, DeploySimpleVoting {
     uint256 public constant STARTING_BALANCE = 10 ether;
 
     event PollCreated(uint256 indexed pollId, uint256 indexed createdAt);
-    event UserVoted(
-        uint256 indexed pollId,
-        address indexed user,
-        SimpleVoting.Vote vote
-    );
+    event UserVoted(uint256 indexed pollId, address indexed user, SimpleVoting.Vote vote);
 
     function setUp() external {
         DeploySimpleVoting deploySimpleVoting = new DeploySimpleVoting();
@@ -57,12 +53,7 @@ contract SimpleVotingTest is Test, DeploySimpleVoting {
         //     abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", USER)
         // );
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Ownable.OwnableUnauthorizedAccount.selector,
-                USER
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, USER));
         simpleVoting.createPoll(question, duration);
     }
 

@@ -31,25 +31,15 @@ contract SimpleVoting is Ownable {
 
     constructor() Ownable(msg.sender) {}
 
-    function createPoll(
-        string calldata _question,
-        uint256 _durationInSeconds
-    ) external onlyOwner {
+    function createPoll(string calldata _question, uint256 _durationInSeconds) external onlyOwner {
         for (uint256 i = 0; i < s_polls.length; i++) {
-            if (
-                keccak256(bytes(s_polls[i].question)) ==
-                keccak256(bytes(_question))
-            ) {
+            if (keccak256(bytes(s_polls[i].question)) == keccak256(bytes(_question))) {
                 revert NameAlreadyExists();
             }
         }
 
-        Poll memory newPoll = Poll({
-            question: _question,
-            yesVotes: 0,
-            noVotes: 0,
-            votingTime: block.timestamp + _durationInSeconds
-        });
+        Poll memory newPoll =
+            Poll({question: _question, yesVotes: 0, noVotes: 0, votingTime: block.timestamp + _durationInSeconds});
         s_polls.push(newPoll);
 
         uint256 pollId = s_polls.length - 1;
@@ -84,9 +74,7 @@ contract SimpleVoting is Ownable {
     }
 
     // get results
-    function getPollResults(
-        uint256 pollIndex
-    ) external view returns (string memory) {
+    function getPollResults(uint256 pollIndex) external view returns (string memory) {
         Poll memory poll = s_polls[pollIndex];
 
         if (block.timestamp < poll.votingTime) {
@@ -102,17 +90,10 @@ contract SimpleVoting is Ownable {
         }
     }
 
-    function getPollInfo(
-        uint256 pollIndex
-    )
+    function getPollInfo(uint256 pollIndex)
         external
         view
-        returns (
-            string memory question,
-            uint256 yesVotes,
-            uint256 noVotes,
-            uint256 votingTime
-        )
+        returns (string memory question, uint256 yesVotes, uint256 noVotes, uint256 votingTime)
     {
         Poll memory poll = s_polls[pollIndex];
         return (poll.question, poll.yesVotes, poll.noVotes, poll.votingTime);
@@ -125,9 +106,7 @@ contract SimpleVoting is Ownable {
         return s_polls[index];
     }
 
-    function getPollQuestion(
-        uint256 index
-    ) external view returns (string memory) {
+    function getPollQuestion(uint256 index) external view returns (string memory) {
         return s_polls[index].question;
     }
 
@@ -147,10 +126,7 @@ contract SimpleVoting is Ownable {
         return s_polls[index].votingTime;
     }
 
-    function hasUserVoted(
-        uint256 pollId,
-        address user
-    ) external view returns (bool) {
+    function hasUserVoted(uint256 pollId, address user) external view returns (bool) {
         return s_hasVoted[pollId][user];
     }
 }
