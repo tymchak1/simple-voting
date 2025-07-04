@@ -26,6 +26,9 @@ contract SimpleVoting is Ownable {
     Poll[] private s_polls;
     mapping(uint256 => mapping(address => bool)) s_hasVoted;
 
+    event PollCreated(uint256 indexed pollId, uint256 indexed createdAt);
+    event UserVoted(uint256 indexed pollId, address indexed user, Vote vote);
+
     constructor() Ownable(msg.sender) {}
 
     function createPoll(
@@ -48,6 +51,9 @@ contract SimpleVoting is Ownable {
             votingTime: block.timestamp + _durationInSeconds
         });
         s_polls.push(newPoll);
+
+        uint256 pollId = s_polls.length - 1;
+        emit PollCreated(pollId, block.timestamp);
     }
 
     function vote(uint256 pollIndex, Vote theVote) external {
@@ -65,7 +71,6 @@ contract SimpleVoting is Ownable {
             revert VotingEnded();
         }
 
-
         s_hasVoted[pollIndex][msg.sender] = true;
 
         if (theVote == Vote.YES) {
@@ -73,10 +78,13 @@ contract SimpleVoting is Ownable {
         } else {
             poll.noVotes += 1;
         }
+
+        uint256 pollId = s_polls.length - 1;
+        emit UserVoted(pollId, msg.sender, theVote);
     }
 
     // get results
-    function pollResults(
+    function getPollResults(
         uint256 pollIndex
     ) external view returns (string memory) {
         Poll memory poll = s_polls[pollIndex];
@@ -137,5 +145,12 @@ contract SimpleVoting is Ownable {
 
     function getPollVotingTime(uint256 index) external view returns (uint256) {
         return s_polls[index].votingTime;
+    }
+
+    function hasUserVoted(
+        uint256 pollId,
+        address user
+    ) external view returns (bool) {
+        return s_hasVoted[pollId][user];
     }
 }
