@@ -7,6 +7,7 @@ import {SimpleVoting} from "../src/SimpleVoting.sol";
 // import {HelperConfig} from "../script/HelperConfig.s.sol";
 import {DeploySimpleVoting} from "../script/DeploySimpleVoting.s.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {AlreadyVoted, VotingEnded, VotingNotEndedYet, NameAlreadyExists, PollDoesNotExist} from "../src/Errors.sol";
 
 contract SimpleVotingTest is Test, DeploySimpleVoting {
     SimpleVoting simpleVoting;
@@ -15,8 +16,12 @@ contract SimpleVotingTest is Test, DeploySimpleVoting {
     address public USER = makeAddr("user");
     uint256 public constant STARTING_BALANCE = 10 ether;
 
-    event PollCreated(uint256 indexed pollId, uint256 indexed createdAt);
-    event UserVoted(uint256 indexed pollId, address indexed user, SimpleVoting.Vote vote);
+    event PollCreated(uint256 indexed pollId, uint256 createdAt);
+    event VoteCast(
+        uint256 indexed pollId,
+        address indexed user,
+        SimpleVoting.Vote vote
+    );
 
     function setUp() external {
         DeploySimpleVoting deploySimpleVoting = new DeploySimpleVoting();
@@ -31,7 +36,7 @@ contract SimpleVotingTest is Test, DeploySimpleVoting {
     function test__RevertIfPollWithThisNameAlreadyExists() external {
         //  Arrange
         string memory question = "Is this contract good?";
-        uint256 duration = 1 hours;
+        uint64 duration = 1 hours;
 
         address owner = simpleVoting.owner();
 
@@ -53,7 +58,12 @@ contract SimpleVotingTest is Test, DeploySimpleVoting {
         //     abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", USER)
         // );
 
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, USER));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Ownable.OwnableUnauthorizedAccount.selector,
+                USER
+            )
+        );
         simpleVoting.createPoll(question, duration);
     }
 
@@ -78,7 +88,7 @@ contract SimpleVotingTest is Test, DeploySimpleVoting {
         uint256 expectedPollId = 0;
         vm.prank(owner);
 
-        vm.expectEmit(true, true, false, false, address(simpleVoting));
+        vm.expectEmit(true, false, false, false, address(simpleVoting));
         emit PollCreated(expectedPollId, 1000);
 
         simpleVoting.createPoll(question, duration);
@@ -89,9 +99,9 @@ contract SimpleVotingTest is Test, DeploySimpleVoting {
         string memory storedQuestion = simpleVoting.getPollQuestion(0);
         assertEq(storedQuestion, question);
 
-        uint256 yesVotes = simpleVoting.getPollYesVotes(0);
-        uint256 noVotes = simpleVoting.getPollNoVotes(0);
-        uint256 votingTime = simpleVoting.getPollVotingTime(0);
+        uint32 yesVotes = simpleVoting.getPollYesVotes(0);
+        uint32 noVotes = simpleVoting.getPollNoVotes(0);
+        uint64 votingTime = simpleVoting.getPollVotingTime(0);
 
         assertEq(yesVotes, 0);
         assertEq(noVotes, 0);
@@ -166,14 +176,14 @@ contract SimpleVotingTest is Test, DeploySimpleVoting {
         uint256 pollId = 0;
 
         vm.expectEmit(true, true, false, true, address(simpleVoting));
-        emit UserVoted(pollId, USER, SimpleVoting.Vote.YES);
+        emit VoteCast(pollId, USER, SimpleVoting.Vote.YES);
 
         vm.startPrank(USER);
         simpleVoting.vote(0, SimpleVoting.Vote.YES);
         assertEq(simpleVoting.hasUserVoted(pollId, USER), true);
 
-        uint256 yesVotes = simpleVoting.getPollYesVotes(0);
-        uint256 noVotes = simpleVoting.getPollNoVotes(0);
+        uint32 yesVotes = simpleVoting.getPollYesVotes(0);
+        uint32 noVotes = simpleVoting.getPollNoVotes(0);
 
         assertEq(yesVotes, 1);
         assertEq(noVotes, 0);
