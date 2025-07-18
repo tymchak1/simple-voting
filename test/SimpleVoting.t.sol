@@ -17,11 +17,7 @@ contract SimpleVotingTest is Test, DeploySimpleVoting {
     uint256 public constant STARTING_BALANCE = 10 ether;
 
     event PollCreated(uint256 indexed pollId, uint256 createdAt);
-    event VoteCast(
-        uint256 indexed pollId,
-        address indexed user,
-        SimpleVoting.Vote vote
-    );
+    event VoteCast(uint256 indexed pollId, address indexed user, SimpleVoting.Vote vote);
 
     function setUp() external {
         DeploySimpleVoting deploySimpleVoting = new DeploySimpleVoting();
@@ -41,35 +37,30 @@ contract SimpleVotingTest is Test, DeploySimpleVoting {
         address owner = simpleVoting.owner();
 
         //  Act&Assert
-        vm.prank(owner);
+        vm.startPrank(owner);
         simpleVoting.createPoll(question, duration);
 
         vm.prank(owner);
-        vm.expectRevert(SimpleVoting.NameAlreadyExists.selector);
+        vm.expectRevert(NameAlreadyExists.selector);
         simpleVoting.createPoll(question, duration);
     }
 
     function test__RevertIfNotOwnerCreatesPoll() external {
         string memory question = "Is this contract good?";
-        uint256 duration = 1 hours;
+        uint64 duration = 1 hours;
 
         vm.prank(USER);
         // vm.expectRevert(
         //     abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", USER)
         // );
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Ownable.OwnableUnauthorizedAccount.selector,
-                USER
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, USER));
         simpleVoting.createPoll(question, duration);
     }
 
     function test__PollAddedToArrayOfPolls() external {
         string memory question = "Is this contract good?";
-        uint256 duration = 1 hours;
+        uint64 duration = 1 hours;
         address owner = simpleVoting.owner();
 
         vm.prank(owner);
@@ -81,7 +72,7 @@ contract SimpleVotingTest is Test, DeploySimpleVoting {
 
     function test__PollCreatedSuccessfully() external {
         string memory question = "Is this contract good?";
-        uint256 duration = 1 hours;
+        uint64 duration = 1 hours;
         address owner = simpleVoting.owner();
 
         vm.warp(1000);
@@ -116,14 +107,14 @@ contract SimpleVotingTest is Test, DeploySimpleVoting {
         vm.prank(USER);
 
         // Act & Assert
-        vm.expectRevert(SimpleVoting.PollDoesNotExist.selector);
+        vm.expectRevert(PollDoesNotExist.selector);
         simpleVoting.vote(1, SimpleVoting.Vote.YES);
     }
 
     function test__RevertIf_UserAlreadyVoted() external {
         // Arrange (create poll)
         string memory question = "Is this contract good?";
-        uint256 duration = 1 hours;
+        uint64 duration = 1 hours;
         address owner = simpleVoting.owner();
 
         vm.prank(owner);
@@ -133,14 +124,14 @@ contract SimpleVotingTest is Test, DeploySimpleVoting {
         simpleVoting.vote(0, SimpleVoting.Vote.YES);
 
         // Assert
-        vm.expectRevert(SimpleVoting.AlreadyVoted.selector);
+        vm.expectRevert(AlreadyVoted.selector);
         simpleVoting.vote(0, SimpleVoting.Vote.YES);
         vm.stopPrank();
     }
 
     function test__RevertIfVotingEnded() external {
         string memory question = "Is this contract good?";
-        uint256 duration = 1 hours;
+        uint64 duration = 1 hours;
         address owner = simpleVoting.owner();
 
         vm.prank(owner);
@@ -148,13 +139,13 @@ contract SimpleVotingTest is Test, DeploySimpleVoting {
 
         vm.warp(block.timestamp + duration + 1);
         vm.prank(USER);
-        vm.expectRevert(SimpleVoting.VotingEnded.selector);
+        vm.expectRevert(VotingEnded.selector);
         simpleVoting.vote(0, SimpleVoting.Vote.YES);
     }
 
     function test__UserIsMarkedAsVotedAfterVoting() external {
         string memory question = "Is this contract good?";
-        uint256 duration = 1 hours;
+        uint64 duration = 1 hours;
         address owner = simpleVoting.owner();
 
         vm.prank(owner);
@@ -167,7 +158,7 @@ contract SimpleVotingTest is Test, DeploySimpleVoting {
 
     function test__VotedSuccessfully() external {
         string memory question = "Is this contract good?";
-        uint256 duration = 1 hours;
+        uint64 duration = 1 hours;
         address owner = simpleVoting.owner();
 
         vm.prank(owner);
